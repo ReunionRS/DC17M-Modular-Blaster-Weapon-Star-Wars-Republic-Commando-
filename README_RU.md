@@ -2,6 +2,7 @@
 
 > Документация проекта самодельного косплей-пропа DC-17M на Arduino Nano.  
 > **Схема подключения:** [Открыть проект в Cirkit Designer](https://app.cirkitdesigner.com/project/09446d83-6643-4f1f-982b-d6ccb8da8b40)
+[🇬🇧 Read documentation in English](README.md)
 
 ## Содержание
 
