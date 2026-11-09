@@ -2,7 +2,7 @@
 
 > Documentation for an Arduino Nano-based DC-17M cosplay prop electronics project.  
 > **Wiring diagram:** [Open the Cirkit Designer project](https://app.cirkitdesigner.com/project/09446d83-6643-4f1f-982b-d6ccb8da8b40)
->[🇷🇺 Читать документацию на русском](README_RU.md)
+🇷🇺 Читать документацию на русском(README_RU.md)
 
 ## Contents
 
