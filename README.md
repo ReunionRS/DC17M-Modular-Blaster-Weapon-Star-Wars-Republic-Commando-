@@ -1,6 +1,6 @@
 # DC-17M — Electronics and Wiring Documentation
 
-> Documentation for an Arduino Nano-based DC-17M cosplay prop electronics project.  
+> Documentation for an Arduino Nano-based DC-17M cosplay prop electronics project.
 > **Wiring diagram:** [Open the Cirkit Designer project](https://app.cirkitdesigner.com/project/09446d83-6643-4f1f-982b-d6ccb8da8b40)
 > 🇷🇺 [Читать документацию на русском](README_RU.md)
 
@@ -25,15 +25,14 @@ The project combines electronic effects and controls for a DC-17M cosplay prop:
 - ammunition display using a four-digit TM1637 module;
 - a removable magazine detected by a Hall sensor;
 - sound effects played by a DFPlayer Mini;
-- an SPI TFT display for the Anti-armor module;
 - a separate grenade-presence sensor;
 - a servo-operated grenade-module mechanism.
 
-This document describes the intended functions and the pin assignments used by the project. Before soldering, compare every connection with the current Cirkit Designer diagram and the silkscreen on the actual modules. Pin layouts may differ between manufacturers.
+This document describes the intended functions and the pin assignments used by the project. Before soldering, compare the pinout with the current `.ino` sketch and the silkscreen on each module; the older Cirkit Designer diagram may show a different configuration.
 
 ## Components
 
-The Cirkit Designer drawing includes the following main modules:
+The current firmware uses the following main modules:
 
 | Component | Purpose |
 |---|---|
@@ -44,10 +43,8 @@ The Cirkit Designer drawing includes the following main modules:
 | Main WS2812 strip | Muzzle-flash effect |
 | Magazine WS2812 strip | Magazine status indicator |
 | Magazine Hall sensor | Detects magazine insertion/removal |
-| Module Hall sensor | Additional magnetic module detection |
 | Grenade Hall sensor | Detects a grenade in the module |
 | Servo motor | Moves the grenade-module mechanism |
-| 0.96-inch 80×160 SPI IPS TFT | Anti-armor module display |
 | FIRE button | Trigger input |
 | MODE button | Mode selection |
 | Power switch | Main power control |
@@ -56,31 +53,24 @@ The Cirkit Designer image also shows two 18650 Li-ion cells and a power section.
 
 ## Arduino Nano Pinout
 
-The following table is based on the project configuration and the labels visible in the wiring diagram.
+This pinout matches the current `.ino` sketch; the older wiring diagram may differ.
 
 | Arduino Nano pin | Connection | Function |
 |---|---|---|
 | D2 | FIRE button | Trigger input, `INPUT_PULLUP` |
-| D3 | Magazine LED DIN | Magazine WS2812 data |
-| D4 | Module Hall sensor OUT | Additional Hall sensor |
-| D5 | MODE button | Mode selection, `INPUT_PULLUP` |
-| D6 | Grenade Hall sensor OUT | Grenade-presence detection |
-| D7 | TFT RES/RST | TFT reset |
-| D8 | TFT DC | TFT data/command selection |
-| D9 | Servo signal | Servo control |
-| D10 | TFT CS | TFT SPI chip select |
-| D11 | TFT SDA/MOSI | SPI data output (MOSI) |
-| D13 | TFT SCL/SCK | SPI clock |
+| D4 | MODE button | Mode selection, `INPUT_PULLUP` |
+| D6 | Servo signal | Servo control |
+| D8 | Grenade Hall sensor OUT | Grenade-presence detection |
+| D9 | Magazine WS2812 strip | DIN signal |
+| A3 | Main WS2812 strip | DIN signal |
+| A4 | TM1637 | DIO |
+| A5 | TM1637 | CLK |
+| A6 | Magazine sensor | Analog input |
 | A1 | DFPlayer TX → Arduino RX | SoftwareSerial receive |
 | A2 | Arduino TX → DFPlayer RX | SoftwareSerial transmit |
-| A3 | Main LED DIN | Main WS2812 data |
-| A4 | TM1637 DIO | TM1637 data |
-| A5 | TM1637 CLK | TM1637 clock |
-| A6 | Magazine Hall sensor OUT | Analog Hall sensor input |
 
 **DFPlayer Mini note:** the firmware defines `MP3_RX = A1` and `MP3_TX = A2`. The serial connection is crossed: DFPlayer TX → Arduino A1, and Arduino A2 → DFPlayer RX. If the DFPlayer RX input requires signal attenuation, add the series resistor or voltage-divider recommended for your module.
 
-**SPI note:** on a classic Arduino Nano, the hardware SPI pins are D11 (MOSI) and D13 (SCK). Some TFT boards label these pins `SDA` and `SCL`; in this SPI connection they are not I²C SDA/SCL.
 
 ## Module Connections
 
@@ -89,7 +79,7 @@ The following table is based on the project configuration and the labels visible
 Connect each button between its assigned digital input and GND:
 
 - FIRE → D2;
-- MODE → D5.
+- MODE → D4.
 
 The firmware uses `INPUT_PULLUP`: a released button reads `HIGH`, and a pressed button reads `LOW`. Do not wire these buttons between the input and +5V with this configuration.
 
@@ -101,7 +91,7 @@ The firmware uses `INPUT_PULLUP`: a released button reads `HIGH`, and a pressed 
 - GND → common ground.
 
 **Magazine indicator strip:**
-- DIN → D3;
+- DIN → D9;
 - +5V → regulated +5V rail;
 - GND → common ground.
 
@@ -118,13 +108,12 @@ The display shows the current ammunition count for the selected mode.
 
 ### 4. Hall sensors
 
-| Sensor | Signal pin | Purpose |
+| Sensor | Signal output | Role |
 |---|---|---|
-| Magazine Hall sensor | A6 | Detects magazine removal/insertion |
-| Additional module Hall sensor | D4 | Separate magnetic module detection |
-| Grenade Hall sensor | D6 | Detects grenade presence |
+| Magazine sensor | A6 | Analog magazine insertion/removal detection |
+| Grenade sensor | D8 | Grenade-presence detection, active LOW |
 
-Connect sensor power to the voltage supported by the specific module and connect GND to common ground. Check the `S`, `+`, and `−` markings on the actual board. Hall modules may have active-LOW or active-HIGH outputs; verify the polarity and match it in the firmware. The magazine sensor on A6 is read as an analog input in the described configuration; D4 and D6 are digital inputs if that is how the current firmware is implemented.
+Nano pin A6 has no internal `INPUT_PULLUP`; use a sensor with a defined output level. Confirm Hall-module polarity against the actual circuit.
 
 ### 5. DFPlayer Mini and speaker
 
@@ -136,24 +125,9 @@ Connect sensor power to the voltage supported by the specific module and connect
 
 The microSD card must be compatible with the module and contain audio files in the expected folder structure. Do not connect SPK1/SPK2 to GND or to the line input of another amplifier: these are bridged speaker outputs.
 
-### 6. Anti-armor SPI TFT (0.96-inch, 80×160)
+### 6. Servo motor
 
-The project configuration assigns:
-
-- RES/RST → D7;
-- DC → D8;
-- CS → D10;
-- SDA/MOSI → D11;
-- SCL/SCK → D13;
-- VCC → supply supported by the display board;
-- GND → common ground;
-- BLK/BL → backlight supply according to the board markings.
-
-TFT boards may use different controllers and pinouts. Confirm whether your exact board accepts 5 V on VCC and its logic inputs. If it is a 3.3 V-only display, use the correct supply and logic-level conversion.
-
-### 7. Servo motor
-
-- signal wire → D9;
+- signal wire → D6;
 - power → a suitable supply rail;
 - GND → common ground with the Arduino.
 
@@ -161,9 +135,9 @@ Do not power the servo through the Arduino Nano's 5V pin. A servo can draw a lar
 
 ## Power Supply
 
-The Cirkit Designer drawing shows two 18650 Li-ion cells. If connected in series, a fully charged pair can reach approximately 8.4 V. **Never connect this voltage directly to the Arduino 5V rail, WS2812 strips, DFPlayer, or TFT display.**
+Use a regulator suited to the selected battery pack and load. Do not connect a battery-pack voltage directly to the Arduino 5V rail, WS2812 strips, or DFPlayer if it exceeds their ratings.
 
-A series Li-ion pair requires:
+If using a series Li-ion pair, provide:
 - a suitable 2S protection/balancing board (BMS with balancing);
 - a charger designed for a 2S Li-ion pack;
 - a DC-DC converter providing regulated 5 V and sufficient continuous/peak current;
@@ -184,6 +158,7 @@ Place the power switch in series with the source's positive wire. Its DC voltage
 
 ### ASSAULT
 
+- A tap fires one shot; holding for 400 ms enables automatic fire at approximately 210 ms intervals.
 - Total ammunition capacity: 300 shots.
 - One magazine: 60 shots.
 - After 60 shots, the magazine must be removed and reinserted.
@@ -196,14 +171,13 @@ Place the power switch in series with the source's positive wire. Its DC voltage
 - 5 rounds in the magazine;
 - 15 rounds in reserve;
 - single-shot operation;
-- no automatic fire.
 
 ### GRENADE
 
 - Up to 4 grenades;
 - single-shot operation;
 - the grenade sensor detects insertion/replacement;
-- the servo operates the module's mechanical element according to the firmware logic.
+- the servo operates the mechanism according to the firmware logic.
 
 The exact reload rules, ammunition reset behavior, and servo sequence depend on the `.ino` firmware currently installed. This document describes the intended project behavior; update this section whenever the firmware changes.
 
@@ -220,6 +194,7 @@ The firmware uses the following track numbers:
 | 0005 | `sniperreload` | Sniper reload |
 | 0006 | `snipershoot` | Sniper firing |
 | 0007 | `switch` | Mode switch |
+| 0008 | `auto burst` | Automatic-fire sound, if enabled in the build |
 
 With `playMp3Folder()`, the DFPlayer Mini library commonly expects an `MP3` folder on the microSD card with numbered files such as `0001.mp3`, `0002.mp3`, and so on. Check the requirements of the exact library and card format. The names in the table are descriptive labels; the numbered filenames are what matter on the card.
 
@@ -229,12 +204,11 @@ Test each subsystem separately before powering everything at once:
 
 1. **Power:** measure the voltage between +5V and GND with no load and while the servo/LEDs are operating.
 2. **Arduino:** confirm that the board boots and the Serial Monitor prints its ready message.
-3. **Buttons:** test D2 and D5; pressing a button should change its input from HIGH to LOW.
+3. **Buttons:** test D2 and D4; pressing a button should change its input from HIGH to LOW.
 4. **WS2812:** test each strip separately and confirm that data enters DIN.
 5. **TM1637:** display a test number.
-6. **Hall sensors:** monitor raw A6 readings and D4/D6 logic levels while moving the magnet. Confirm active polarity.
+6. **Hall sensors:** monitor raw A6 readings and D8 logic level while moving the magnet. Confirm active polarity.
 7. **DFPlayer:** run a standalone player test first and confirm that the module responds and plays all seven tracks.
-8. **TFT:** verify the controller model, SPI wiring, and library configuration.
 9. **Servo:** test it separately without mechanical load, then check current draw and supply stability.
 
 If the Nano resets when the servo moves, do not try to solve it with software delays. Check the power supply, common ground, and available current first.
